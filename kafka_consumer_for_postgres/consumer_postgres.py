@@ -54,40 +54,41 @@ print("Consumer started, writing to PostgreSQL...")
 try:
     for message in consumer:
         data = message.value
-        try:
-            # Ensure all keys exist
-            cursor.execute(
-                """
-                INSERT INTO vehicle_data (
-                    generated, routeShortName, tripId, routeId, headsign, vehicleCode,
-                    vehicleService, vehicleId, speed, direction, delay,
-                    scheduledTripStartTime, lat, lon, gpsQuality
-                ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
-                """,
-                (
-                    data.get("generated"),
-                    data.get("routeShortName"),
-                    data.get("tripId"),
-                    data.get("routeId"),
-                    data.get("headsign"),
-                    data.get("vehicleCode"),
-                    data.get("vehicleService"),
-                    data.get("vehicleId"),
-                    data.get("speed"),
-                    data.get("direction"),
-                    data.get("delay"),
-                    data.get("scheduledTripStartTime"),
-                    data.get("lat"),
-                    data.get("lon"),
-                    data.get("gpsQuality"),
+        vehicles = data.get("vehicles", [])
+
+        for vehicle in vehicles:
+            try:
+                cursor.execute(
+                    """
+                    INSERT INTO vehicle_data (
+                        generated, routeShortName, tripId, routeId, headsign, vehicleCode,
+                        vehicleService, vehicleId, speed, direction, delay,
+                        scheduledTripStartTime, lat, lon, gpsQuality
+                    ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                    """,
+                    (
+                        vehicle.get("generated"),
+                        vehicle.get("routeShortName"),
+                        vehicle.get("tripId"),
+                        vehicle.get("routeId"),
+                        vehicle.get("headsign"),
+                        vehicle.get("vehicleCode"),
+                        vehicle.get("vehicleService"),
+                        vehicle.get("vehicleId"),
+                        vehicle.get("speed"),
+                        vehicle.get("direction"),
+                        vehicle.get("delay"),
+                        vehicle.get("scheduledTripStartTime"),
+                        vehicle.get("lat"),
+                        vehicle.get("lon"),
+                        vehicle.get("gpsQuality"),
+                    )
                 )
-            )
-            conn.commit()
-            print(f"[{datetime.utcnow()}] Inserted vehicleId {data.get('vehicleId')} into PostgreSQL")
-        except Exception as e:
-            print(f"Error inserting data: {e}")
-            conn.rollback()
-            time.sleep(1)  # Avoid spamming logs
+                conn.commit()
+                print(f"Inserted vehicleId {vehicle.get('vehicleId')} into PostgreSQL")
+            except Exception as e:
+                print(f"Error inserting data: {e}")
+                conn.rollback()
 
 except KeyboardInterrupt:
     print("Shutting down consumer gracefully...")
