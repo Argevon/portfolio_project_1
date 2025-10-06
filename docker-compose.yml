@@ -33,12 +33,21 @@ services:
       - kafka
     restart: unless-stopped
 
-  consumer:
-    build: ./kafka_consumer
-    container_name: consumer
+  consumer_for_azure:
+    build: ./kafka_consumer_for_azure
+    container_name: kafka_consumer_for_azure
     env_file: .env
     depends_on:
       - kafka
+    restart: unless-stopped
+
+  consumer_for_postgres:
+    build: ./kafka_consumer_for_postgres
+    container_name: kafka_consumer_for_postgres
+    env_file: .env
+    depends_on:
+      - kafka
+      - postgres
     restart: unless-stopped
 
   postgres:
