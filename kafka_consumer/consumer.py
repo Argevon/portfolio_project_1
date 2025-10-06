@@ -12,7 +12,7 @@ KAFKA_BROKER = os.getenv("KAFKA_BROKER", "kafka:9092")
 KAFKA_TOPIC = os.getenv("KAFKA_TOPIC", "json_data")
 
 AZURE_CONNECTION_STRING = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
-AZURE_CONTAINER = os.getenv("AZURE_CONTAINER", "kafka-data")
+AZURE_CONTAINER = os.getenv("CONTAINER_NAME", "kafka-data")
 
 # Initialize Kafka consumer
 consumer = KafkaConsumer(
