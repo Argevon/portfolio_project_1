@@ -80,7 +80,7 @@ services:
     container_name: airflow
     environment:
       - AIRFLOW__CORE__EXECUTOR=LocalExecutor
-      - AIRFLOW__CORE__SQL_ALCHEMY_CONN=sqlite:////root/airflow/airflow.db
+      - AIRFLOW__CORE__SQL_ALCHEMY_CONN=postgresql+psycopg2://kafka_user:${POSTGRES_PASSWORD}@postgres:5432/kafka_data
       - AIRFLOW__CORE__LOAD_EXAMPLE=False
       - _PIP_ADDITIONAL_REQUIREMENTS=apache-airflow-providers-postgres apache-airflow-providers-snowflake
     volumes:
