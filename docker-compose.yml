@@ -75,5 +75,29 @@ services:
       - postgres
     restart: unless-stopped
 
+  airflow:
+    image: apache/airflow:2.9.2
+    container_name: airflow
+    environment:
+      - AIRFLOW__CORE__EXECUTOR=LocalExecutor
+      - AIRFLOW__CORE__SQL_ALCHEMY_CONN=sqlite:////root/airflow/airflow.db
+      - AIRFLOW__CORE__LOAD_EXAMPLE=False
+      - _PIP_ADDITIONAL_REQUIREMENTS=apache-airflow-providers-postgres apache-airflow-providers-snowflake
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags
+      - ./airflow/logs:/opt/airflow/logs
+      - ./airflow/plugins:/opt/airflow/plugins
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+    command: >
+      bash -c "
+      airflow db init &&
+      airflow users create --username admin --password admin --firstname admin --lastname user --role Admin --email 711laskowski@gmail.com &&
+      airflow webserver & airflow scheduler
+      "
+    depends_on:
+      - postgres
+
 volumes:
   postgres_data:
