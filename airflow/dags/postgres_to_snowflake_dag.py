@@ -17,7 +17,7 @@ def transfer_data():
 
     # Insert data into Snowflake
     insert_query = """
-        INSERT INTO vehicle_data_snowflake (
+        INSERT INTO RAW_BUS_DATA.VEHICLE_DATA_SNOWFLAKE (
             generated, routeShortName, tripId, routeId, headsign, vehicleCode,
             vehicleService, vehicleId, speed, direction, delay,
             scheduledTripStartTime, lat, lon, gpsQuality
