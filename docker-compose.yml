@@ -94,7 +94,8 @@ services:
       bash -c "
       airflow db init &&
       airflow users create --username admin --password admin --firstname admin --lastname user --role Admin --email 711laskowski@gmail.com &&
-      airflow webserver
+      airflow webserver -p 8080 & 
+      airflow scheduler
       "
     depends_on:
       - postgres

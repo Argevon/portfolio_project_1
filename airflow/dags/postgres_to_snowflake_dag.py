@@ -12,7 +12,7 @@ def transfer_data():
     # Fetch data from Postgres
     pg_conn = pg_hook.get_conn()
     pg_cursor = pg_conn.cursor()
-    pg_cursor.execute("SELECT * FROM vehicle_data;")
+    pg_cursor.execute("SELECT * FROM vehicle_data LIMIT 10;")
     rows = pg_cursor.fetchall()
 
     # Insert data into Snowflake
