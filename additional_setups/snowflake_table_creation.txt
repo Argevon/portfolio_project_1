@@ -1,0 +1,18 @@
+CREATE OR REPLACE TABLE RAW_BUS_DATA.VEHICLE_DATA_SNOWFLAKE (
+    generated TIMESTAMP_TZ,
+    routeShortName STRING,
+    tripId STRING,
+    routeId STRING,
+    headsign STRING,
+    vehicleCode STRING,
+    vehicleService STRING,
+    vehicleId STRING,
+    speed FLOAT,
+    direction FLOAT,
+    delay FLOAT,
+    scheduledTripStartTime STRING,
+    lat FLOAT,
+    lon FLOAT,
+    gpsQuality STRING,
+    CONSTRAINT unique_vehicle_ts UNIQUE (vehicleId, generated)
+);

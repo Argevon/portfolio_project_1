@@ -4,6 +4,7 @@ import json
 from kafka import KafkaConsumer
 from azure.storage.blob import BlobServiceClient
 from dotenv import load_dotenv
+from prometheus_client import start_http_server, Counter, Gauge
 
 # Load environment variables
 load_dotenv()
@@ -35,6 +36,12 @@ except Exception:
 
 print("Consumer started, waiting for messages...")
 
+# Prometheus metrics
+start_http_server(8002)
+
+MESSAGES_UPLOADED = Counter("kafka_consumer_azure_messages_total", "Number of blobs uploaded")
+UPLOAD_ERRORS = Counter("kafka_consumer_azure_errors_total", "Number of upload errors")
+
 for message in consumer:
     try:
         data = message.value
@@ -52,7 +59,9 @@ for message in consumer:
         blob_client = container_client.get_blob_client(blob_name)
         blob_client.upload_blob(json.dumps(data), overwrite=True)
         print(f"Blob '{blob_name}' successfully uploaded to container '{AZURE_CONTAINER}'.")
+        MESSAGES_UPLOADED.inc()
 
     except Exception as e:
         print(f"Error uploading blob to Azure: {e}")
+        UPLOAD_ERRORS.inc()
         time.sleep(5)  # wait a few seconds before continuing

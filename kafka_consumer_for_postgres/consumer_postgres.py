@@ -6,6 +6,7 @@ import psycopg2
 from psycopg2 import OperationalError
 from dotenv import load_dotenv
 from datetime import datetime
+from prometheus_client import start_http_server, Counter, Gauge
 
 # Load environment variables
 load_dotenv()
@@ -51,6 +52,13 @@ consumer = KafkaConsumer(
 
 print("Consumer started, writing to PostgreSQL...")
 
+# Prometheus metrics
+start_http_server(8001)
+
+MESSAGES_CONSUMED = Counter("kafka_consumer_pg_messages_total", "Number of Kafka messages consumed")
+INSERT_ERRORS = Counter("kafka_consumer_pg_insert_errors_total", "Number of insert errors")
+LAST_INSERT_TIME = Gauge("kafka_consumer_pg_last_insert_time", "Timestamp of last inserted row")
+
 try:
     for message in consumer:
         data = message.value
@@ -65,6 +73,7 @@ try:
                         vehicleService, vehicleId, speed, direction, delay,
                         scheduledTripStartTime, lat, lon, gpsQuality
                     ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                    ON CONFLICT (vehicleId, generated) DO NOTHING;
                     """,
                     (
                         vehicle.get("generated"),
@@ -86,12 +95,16 @@ try:
                 )
                 conn.commit()
                 print(f"Inserted vehicleId {vehicle.get('vehicleId')} into PostgreSQL")
+                MESSAGES_CONSUMED.inc()
+                LAST_INSERT_TIME.set_to_current_time()
             except Exception as e:
                 print(f"Error inserting data: {e}")
+                INSERT_ERRORS.inc()
                 conn.rollback()
 
 except KeyboardInterrupt:
     print("Shutting down consumer gracefully...")
+    INSERT_ERRORS.inc()
 
 finally:
     print("Closing connections...")

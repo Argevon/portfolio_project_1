@@ -82,6 +82,11 @@ services:
       - AIRFLOW__CORE__EXECUTOR=LocalExecutor
       - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://kafka_user:${POSTGRES_PASSWORD}@postgres:5432/kafka_data
       - AIRFLOW__CORE__LOAD_EXAMPLES=False
+      - AIRFLOW__METRICS__STATSD_ON=True
+      - AIRFLOW__METRICS__STATSD_HOST=airflow-statsd
+      - AIRFLOW__METRICS__STATSD_PORT=9125
+      - AIRFLOW__METRICS__STATSD_PREFIX=airflow
+      - AIRFLOW__METRICS__STATSD_ALLOW_LIST=*
       - _PIP_ADDITIONAL_REQUIREMENTS=apache-airflow-providers-postgres apache-airflow-providers-snowflake
     volumes:
       - ./airflow/dags:/opt/airflow/dags
@@ -92,6 +97,7 @@ services:
     restart: unless-stopped
     command: >
       bash -c "
+      chown -R airflow: /opt/airflow/logs /opt/airflow/dags /opt/airflow/plugins &&
       airflow db init &&
       airflow users create --username admin --password admin --firstname admin --lastname user --role Admin --email 711laskowski@gmail.com &&
       airflow webserver -p 8080 & 
@@ -99,6 +105,64 @@ services:
       "
     depends_on:
       - postgres
+      - airflow-statsd
+
+  airflow-statsd:
+    image: prom/statsd-exporter:latest
+    container_name: airflow_statsd_exporter
+    ports:
+      - "9101:9100"
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    ports:
+      - "9090:9090"
+    depends_on:
+      - producer
+      - kafka_consumer_for_postgres
+      - kafka_consumer_for_azure
+      - airflow
+    restart: unless-stopped
+
+  postgres_exporter:
+    image: prometheuscommunity/postgres-exporter:latest
+    container_name: postgres_exporter
+    environment:
+      DATA_SOURCE_NAME: "postgresql://kafka_user:${POSTGRES_PASSWORD}@postgres:5432/kafka_data?sslmode=disable"
+    ports:
+      - "9187:9187"
+    depends_on:
+      - postgres
+    restart: unless-stopped
+
+  node_exporter:
+    image: prom/node-exporter:latest
+    container_name: node_exporter
+    restart: unless-stopped
+    ports:
+      - "9100:9100"
+    command:
+      - '--path.rootfs=/host'
+    volumes:
+      - '/:/host:ro,rslave'
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    container_name: cadvisor
+    ports:
+      - '8085:8080'
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:rw
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+    restart: unless-stopped
 
 volumes:
   postgres_data:
+  prometheus_data:
