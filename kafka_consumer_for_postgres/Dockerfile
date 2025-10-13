@@ -7,6 +7,7 @@ COPY consumer_postgres.py /app/
 RUN pip install --no-cache-dir \
     kafka-python==2.0.2 \
     python-dotenv==0.21.0 \
-    psycopg2-binary==2.9.9
+    psycopg2-binary==2.9.9 \
+    prometheus_client==0.17.0
 
 CMD ["python", "consumer_postgres.py"]
