@@ -124,8 +124,8 @@ services:
       - "9090:9090"
     depends_on:
       - producer
-      - kafka_consumer_for_postgres
-      - kafka_consumer_for_azure
+      - consumer_for_postgres
+      - consumer_for_azure
       - airflow
     restart: unless-stopped
 
