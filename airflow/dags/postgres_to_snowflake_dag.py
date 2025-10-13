@@ -40,33 +40,15 @@ def transfer_data_batch():
         if not rows:
             break
 
-        # --- MERGE INTO Snowflake ---
-        merge_query = """
-            MERGE INTO RAW_BUS_DATA.VEHICLE_DATA_SNOWFLAKE AS target
-            USING (
-                SELECT column1 AS generated, column2 AS routeShortName, column3 AS tripId,
-                       column4 AS routeId, column5 AS headsign, column6 AS vehicleCode,
-                       column7 AS vehicleService, column8 AS vehicleId, column9 AS speed,
-                       column10 AS direction, column11 AS delay, column12 AS scheduledTripStartTime,
-                       column13 AS lat, column14 AS lon, column15 AS gpsQuality
-                FROM VALUES %s
-            ) AS source
-            ON target.vehicleId = source.vehicleId AND target.generated = source.generated
-            WHEN MATCHED THEN UPDATE SET
-                target.delay = source.delay,
-                target.speed = source.speed,
-                target.lat = source.lat,
-                target.lon = source.lon
-            WHEN NOT MATCHED THEN
-                INSERT (generated, routeShortName, tripId, routeId, headsign, vehicleCode,
-                        vehicleService, vehicleId, speed, direction, delay,
-                        scheduledTripStartTime, lat, lon, gpsQuality)
-                VALUES (source.generated, source.routeShortName, source.tripId, source.routeId,
-                        source.headsign, source.vehicleCode, source.vehicleService,
-                        source.vehicleId, source.speed, source.direction, source.delay,
-                        source.scheduledTripStartTime, source.lat, source.lon, source.gpsQuality);
-        """
-        sf_cursor.execute(merge_query, (rows,))
+        # --- Snowflake Query ---
+        sf_cursor.executemany("""
+            INSERT INTO RAW_BUS_DATA.VEHICLE_DATA_SNOWFLAKE (
+                generated, routeShortName, tripId, routeId, headsign, vehicleCode,
+                vehicleService, vehicleId, speed, direction, delay,
+                scheduledTripStartTime, lat, lon, gpsQuality
+            )
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        """, rows)
         sf_conn.commit()
 
         last_max_generated = max(row[0] for row in rows)
